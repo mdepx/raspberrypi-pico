@@ -16,7 +16,9 @@ CPUs are selected by MDX scheduler in round-robin fashion.
 
 Program the result file (obj/rpi-pico.elf) to your pico.
 
-## Connect serial console. You should see something like this:
+## Connect serial console
+
+You should see something like this:
 
 ```
 cpu0: test_thr0
