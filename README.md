@@ -15,3 +15,13 @@ CPUs are selected by MDX scheduler in round-robin fashion.
 ## Program
 
 Program the result file (obj/rpi-pico.elf) to your pico.
+
+## Connect serial console. You should see something like this:
+
+```
+cpu0: test_thr0
+cpu1: test_thr2
+cpu0: test_thr0
+cpu1: Hello world
+cpu0: test_thr1
+```
