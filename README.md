@@ -38,7 +38,7 @@ Also connect the programmer pico to your PC using USB-C cable.
 
 You will need an openocd application in order to communicate to the programmer.
 
-Build and install it from [raspberrypi fork](https://github.com/raspberrypi/openocd/). I used picoprobe branch.
+Build and install it from raspberrypi [openocd fork](https://github.com/raspberrypi/openocd/). I used [picoprobe](https://github.com/raspberrypi/openocd/tree/picoprobe) branch.
 
 Program the result file (obj/raspberry-pico.elf) to your target pico:
 
