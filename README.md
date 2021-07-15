@@ -14,7 +14,21 @@ CPUs are selected by MDX scheduler in round-robin fashion.
 
 ## Program
 
-Program the result file (obj/rpi-pico.elf) to your pico.
+You will need two pico boards: one acts as a programmer (using PicoProbe), another is a target pico.
+
+Download PicoProbe UF2 file from [Utilities section](https://www.raspberrypi.org/documentation/rp2040/getting-started/#board-specifications).
+
+Drop the PicoProbe UF2 file onto the RPI-RP2 volume of your programmer pico and reboot the pico, so it is now an SWD programmer.
+
+#### OpenOCD
+
+You will need an openocd application in order to communicate to the programmer.
+
+Program the result file (obj/rpi-pico.elf) to your target pico:
+
+```
+sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -s tcl -c 'program obj/rpi-pico.elf reset exit
+```
 
 ## Connect serial console
 
