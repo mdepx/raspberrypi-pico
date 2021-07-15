@@ -28,4 +28,4 @@ cpu1: Hello world
 cpu0: test_thr1
 ```
 
-![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.jpg
+![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.jpg)
