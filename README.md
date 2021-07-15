@@ -20,6 +20,20 @@ Download PicoProbe UF2 file from [Utilities section](https://www.raspberrypi.org
 
 Drop the PicoProbe UF2 file onto the RPI-RP2 volume of your programmer pico and reboot the pico, so it is now an SWD programmer.
 
+Connect to each other two picos using jumper wires:
+
+| Programmer Pico | Target Pico                |
+| --------------- | -------------------------- |
+| GP2             | SWD header SWCLK pin       |
+| Any GND pin     | SWD header GND pin         |
+| GP3             | SWD header SWDIO pin       |
+| GP4             | GP1 (uart0 RX)             |
+| GP5             | GP0 (uart0 TX)             |
+| VSYS            | VSYS                       |
+| GND             | GND                        |
+
+Also connect the programmer pico to your PC using USB-C cable.
+
 #### OpenOCD
 
 You will need an openocd application in order to communicate to the programmer.
