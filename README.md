@@ -1,6 +1,6 @@
 ## Raspberry PI Pico
 
-This is a Symmetric multiprocessing (SMP) demo for Raspberry Pi Pico.
+This is a Symmetric multiprocessing (SMP) demo app for Raspberry Pi Pico.
 
 The MDEPX rtos is used in this demo.
 
@@ -40,13 +40,21 @@ You will need an openocd application in order to communicate to the programmer.
 
 Build and install it from [raspberrypi fork](https://github.com/raspberrypi/openocd/). I used picoprobe branch.
 
-Program the result file (obj/rpi-pico.elf) to your target pico:
+Program the result file (obj/raspberry-pico.elf) to your target pico:
 
 ```
-sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -s tcl -c 'program obj/rpi-pico.elf reset exit
+sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg \
+    -s tcl -c 'program obj/rpi-pico.elf reset exit
 ```
 
 ## Connect serial console
+
+It is /dev/ttyACMx on Linux, and /dev/ttyUSBx on FreeBSD.
+
+You can use cu(1) this way:
+```
+sudo cu -l /dev/ttyACM0 -s 115200
+```
 
 You should see something like this:
 

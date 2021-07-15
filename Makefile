@@ -1,4 +1,4 @@
-APP =		rpi-pico
+APP =		raspberrypi-pico
 
 CC =		${CROSS_COMPILE}gcc
 LD =		${CROSS_COMPILE}ld
