@@ -1,5 +1,9 @@
 APP =		raspberrypi-pico
 
+CROSS_COMPILE ?=	arm-none-eabi-
+
+export CROSS_COMPILE
+
 CC =		${CROSS_COMPILE}gcc
 LD =		${CROSS_COMPILE}ld
 OBJCOPY =	${CROSS_COMPILE}objcopy

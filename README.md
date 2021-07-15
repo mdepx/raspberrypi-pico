@@ -9,7 +9,7 @@ The main() function of this app creates a few threads that are running on differ
 CPUs are selected by MDX scheduler in round-robin fashion.
 
 ## Build instructions on Linux
-    $ export CROSS_COMPILE=arm-none-eabi-
+    $ sudo apt install gcc-arm-embedded
     $ make
 
 ## Program
