@@ -2,15 +2,14 @@
 #include <sys/systm.h>
 #include <sys/thread.h>
 #include <sys/spinlock.h>
-#include <dev/intc/intc.h>
 
 #include <arm/raspberrypi/rp2040.h>
 
 #include <app/callout_test/callout_test.h>
 
-struct spinlock l;
+static struct spinlock l;
 
-static void __unused
+static void
 test_thr(void *arg)
 {
 	int n;
