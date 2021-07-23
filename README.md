@@ -1,5 +1,7 @@
 ## Raspberry PI Pico
 
+![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.webp)
+
 This is a Symmetric multiprocessing (SMP) demo app for Raspberry Pi Pico.
 
 The MDEPX rtos is used in this demo.
