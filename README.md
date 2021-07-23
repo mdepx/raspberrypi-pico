@@ -8,7 +8,7 @@ The main() function of this app creates a few threads that are running on differ
 
 CPUs are selected by MDX scheduler in round-robin fashion.
 
-![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.webp)
+![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.png)
 
 ## Build instructions on Linux
     $ sudo apt install gcc-arm-embedded
