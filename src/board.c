@@ -104,7 +104,7 @@ core1_boot(void)
 	pcpup->pc_cpuid = 1;
 	list_init(&pcpup->pc_avail);
 	mdx_thread_init(1);
-	pcpup->pc_stack = (uintptr_t)&intr_stack[1] +
+	pcpup->pc_stack = (uint8_t *)&intr_stack[1] +
 	    MDX_ARM_INTR_STACK_SIZE;
 	__asm __volatile("msr msp, %0" :: "r"(pcpup->pc_stack));
 
