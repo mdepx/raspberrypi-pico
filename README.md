@@ -46,7 +46,7 @@ Program the result file (obj/raspberry-pico.elf) to your target pico:
 
 ```
 sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg \
-    -s tcl -c 'program /path/to/obj/raspberry-pico.elf reset exit
+    -s tcl -c 'program /path/to/obj/raspberry-pico.elf reset exit'
 ```
 
 ## Connect serial console
