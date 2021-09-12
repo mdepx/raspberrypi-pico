@@ -34,7 +34,7 @@ Connect to each other two picos using jumper wires:
 | VSYS            | VSYS                       |
 | GND             | GND                        |
 
-Also connect the programmer pico to your PC using USB-C cable.
+Also connect the programmer pico to your PC using USB cable.
 
 #### OpenOCD
 
