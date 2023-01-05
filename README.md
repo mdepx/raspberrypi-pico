@@ -1,12 +1,10 @@
 ## Raspberry PI Pico
 
-This is a Symmetric multiprocessing (SMP) demo app for Raspberry Pi Pico.
+This is a demo app for Raspberry Pi Pico.
 
 The MDEPX rtos is used in this demo.
 
-The main() function of this app creates a few threads that are running on different CPUs of RP2040 SoC.
-
-CPUs are selected by MDX scheduler in round-robin fashion.
+The main() function of this app creates a few threads that are running on cpu0 of the pico.
 
 ![pico](https://raw.githubusercontent.com/machdep/raspberrypi-pico/master/images/pico.png)
 
