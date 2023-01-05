@@ -64,7 +64,9 @@ extern uint8_t intr_stack[MDX_CPU_MAX][MDX_ARM_INTR_STACK_SIZE];
 void core1_startup(void);
 void core1_boot(void);
 
+#ifdef MDX_SMP
 static int cpu_started;
+#endif
 
 void
 send_ipi(int mask, int ipi)
@@ -93,6 +95,7 @@ usleep(uint32_t usec)
 	mdx_usleep(usec);
 }
 
+#ifdef MDX_SMP
 void
 core1_boot(void)
 {
@@ -153,6 +156,7 @@ secondary_start(void)
 
 	rp2040_sio_fifo_drain(&sio_sc);
 }
+#endif
 
 void
 board_init(void)
@@ -217,10 +221,12 @@ board_init(void)
 
 	printf("%s: board initialized\n", __func__);
 
+#ifdef MDX_SMP
 	cpu_started = 0;
 	secondary_start();
 	while (cpu_started == 0)
 		cpu_nullop();
+#endif
 
 	mdx_intc_setup(&dev_nvic, RP2040_SIO_IRQ_PROC0, rp2040_sio_intr,
 	    &sio_sc);
