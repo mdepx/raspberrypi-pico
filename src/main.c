@@ -17,9 +17,11 @@ test_thr(void *arg)
 	n = (int)arg;
 
 	while (1) {
+		critical_enter();
 		sl_lock(&l);
 		printf("cpu%d: %s%d\n", PCPU_GET(cpuid), __func__, n);
 		sl_unlock(&l);
+		critical_exit();
 		mdx_usleep(10000 + 100000 * n);
 	}
 }
@@ -46,9 +48,11 @@ main(void)
 		mdx_sched_add(td);
 
 	while (1) {
+		critical_enter();
 		sl_lock(&l);
 		printf("cpu%d: Hello world\n", PCPU_GET(cpuid));
 		sl_unlock(&l);
+		critical_exit();
 		mdx_usleep(50000);
 	}
 
