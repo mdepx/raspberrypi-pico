@@ -16,7 +16,7 @@ The main() function of this app creates a few threads that are running on cpu0 o
 
 You will need two pico boards: one acts as a programmer (using PicoProbe), another is a target pico.
 
-Download PicoProbe UF2 file from [Utilities section](https://www.raspberrypi.org/documentation/rp2040/getting-started/#board-specifications).
+Download PicoProbe UF2 file from [Raspberry Pi website](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html#debugging-using-another-raspberry-pi-pico)
 
 Drop the PicoProbe UF2 file onto the RPI-RP2 volume of your programmer pico and reboot the pico, so it is now an SWD programmer.
 
@@ -38,7 +38,7 @@ Also connect the programmer pico to your PC using USB cable.
 
 You will need an openocd application in order to communicate to the programmer.
 
-Build and install it from raspberrypi [openocd fork](https://github.com/raspberrypi/openocd/). I used [picoprobe](https://github.com/raspberrypi/openocd/tree/picoprobe) branch.
+Build and install it from raspberrypi [openocd fork](https://github.com/raspberrypi/openocd/).
 
 Program the result file (obj/raspberry-pico.elf) to your target pico:
 
