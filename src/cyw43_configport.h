@@ -5,7 +5,10 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <dev/gpio/gpio.h>
 #include <assert.h>
+
+extern struct mdx_device dev_gpio;
 
 #ifndef CYW43_HOST_NAME
 #define CYW43_HOST_NAME "Pico-W"
@@ -80,7 +83,7 @@
 #define CYW43_HAL_PIN_PULL_UP		(1)
 #define CYW43_HAL_PIN_PULL_DOWN		(2)
 
-#define cyw43_hal_pin_obj_t u_int
+#define cyw43_hal_pin_obj_t uint32_t
 typedef uint32_t uint;
 
 void cyw43_schedule_internal_poll_dispatch(void (*func)(void));
@@ -112,10 +115,13 @@ cyw43_hal_ticks_ms(void)
 static inline int
 cyw43_hal_pin_read(cyw43_hal_pin_obj_t pin)
 {
+	uint32_t val;
 
-	printf("%s: %d\n", __func__, pin);
+	val = mdx_gpio_get(&dev_gpio, pin);
 
-	return 0;
+	printf("%s: pin %d, val %d\n", __func__, pin, val);
+
+	return (val);
 }
 
 static inline void
@@ -123,6 +129,8 @@ cyw43_hal_pin_low(cyw43_hal_pin_obj_t pin)
 {
 
 	printf("%s: %d\n", __func__, pin);
+
+	mdx_gpio_set(&dev_gpio, pin, 0);
 }
 
 static inline void
@@ -130,15 +138,29 @@ cyw43_hal_pin_high(cyw43_hal_pin_obj_t pin)
 {
 
 	printf("%s: %d\n", __func__, pin);
+
+	mdx_gpio_set(&dev_gpio, pin, 1);
 }
 
 static inline void
 cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
-    __unused uint32_t alt)
+    uint32_t alt __unused)
 {
+	uint32_t flags;
 
 	printf("%s: pin %d mode %d pull %d alt %d\n", __func__,
 	    pin, mode, pull, alt);
+
+	if (mode == CYW43_HAL_PIN_MODE_INPUT)
+		flags = MDX_GPIO_INPUT;
+	else
+		flags = MDX_GPIO_OUTPUT;
+
+#if 0
+	if (pull == CYW43_HAL_PIN_PULL_UP)
+#endif
+
+	mdx_gpio_configure(&dev_gpio, pin, flags);
 }
 
 #endif
