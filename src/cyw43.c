@@ -34,14 +34,14 @@ void
 cyw43_delay_ms(uint32_t ms)
 {
 
-	printf("%s\n", __func__);
+	udelay(ms * 1000);
 }
 
 void
 cyw43_delay_us(uint32_t us)
 {
 
-	printf("%s\n", __func__);
+	udelay(us);
 }
 
 void
