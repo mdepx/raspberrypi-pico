@@ -62,7 +62,7 @@ uint32_t
 read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
 
-	printf("%s\n", __func__);
+	printf("%s: fn %x reg %x\n", __func__, fn, reg);
 
 	return (0);
 }

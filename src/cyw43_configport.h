@@ -60,7 +60,7 @@
 #define	CYW43_EINVAL		-3
 #define	CYW43_ETIMEDOUT		-4
 
-#define	CYW43_NUM_GPIOS		4
+#define	CYW43_NUM_GPIOS		3
 
 #define	CYW43_THREAD_ENTER	critical_enter()
 #define	CYW43_THREAD_EXIT	critical_exit()
@@ -71,10 +71,8 @@
 #define CYW43_POST_POLL_HOOK	cyw43_post_poll_hook();
 #define CYW43_ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 
+#define	CYW43_PIN_WL_REG_ON	23
 #define CYW43_PIN_WL_HOST_WAKE	24
-#define	CYW43_PIN_WL_SDIO_1	2
-#define	CYW43_PIN_WL_REG_ON	2
-#define	CYW43_PIN_WL_SDIO	2
 
 #define CYW43_HAL_PIN_MODE_INPUT	(1)
 #define CYW43_HAL_PIN_MODE_OUTPUT	(2)
@@ -115,7 +113,7 @@ static inline int
 cyw43_hal_pin_read(cyw43_hal_pin_obj_t pin)
 {
 
-	printf("%s\n", __func__);
+	printf("%s: %d\n", __func__, pin);
 
 	return 0;
 }
@@ -124,14 +122,14 @@ static inline void
 cyw43_hal_pin_low(cyw43_hal_pin_obj_t pin)
 {
 
-	printf("%s\n", __func__);
+	printf("%s: %d\n", __func__, pin);
 }
 
 static inline void
 cyw43_hal_pin_high(cyw43_hal_pin_obj_t pin)
 {
 
-	printf("%s\n", __func__);
+	printf("%s: %d\n", __func__, pin);
 }
 
 static inline void
@@ -139,7 +137,8 @@ cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
     __unused uint32_t alt)
 {
 
-	printf("%s\n", __func__);
+	printf("%s: pin %d mode %d pull %d alt %d\n", __func__,
+	    pin, mode, pull, alt);
 }
 
 #endif
