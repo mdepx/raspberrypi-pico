@@ -3,6 +3,8 @@
 #include <sys/thread.h>
 #include <sys/spinlock.h>
 
+#include <lib/cyw43-driver/src/cyw43.h>
+
 #include <arm/raspberrypi/rp2040.h>
 
 #include <app/callout_test/callout_test.h>
@@ -36,6 +38,13 @@ main(void)
 #if 0
 	callout_test();
 #endif
+
+	printf("%s: initializing cyw32\n", __func__);
+	cyw43_init(&cyw43_state);
+	printf("%s: cyw43_init returned\n", __func__);
+
+	while (1)
+		mdx_usleep(50000);
 
 	td = mdx_thread_create("test", 1, 1000, 4096, test_thr, (void *)0);
 	if (td)

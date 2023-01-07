@@ -97,12 +97,16 @@ static inline uint32_t
 cyw43_hal_ticks_us(void)
 {
 
+	printf("%s\n", __func__);
+
 	return 0;
 }
 
 static inline uint32_t
 cyw43_hal_ticks_ms(void)
 {
+
+	printf("%s\n", __func__);
 
 	return 0;
 }
@@ -111,6 +115,8 @@ static inline int
 cyw43_hal_pin_read(cyw43_hal_pin_obj_t pin)
 {
 
+	printf("%s\n", __func__);
+
 	return 0;
 }
 
@@ -118,12 +124,14 @@ static inline void
 cyw43_hal_pin_low(cyw43_hal_pin_obj_t pin)
 {
 
+	printf("%s\n", __func__);
 }
 
 static inline void
 cyw43_hal_pin_high(cyw43_hal_pin_obj_t pin)
 {
 
+	printf("%s\n", __func__);
 }
 
 static inline void
@@ -131,6 +139,7 @@ cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
     __unused uint32_t alt)
 {
 
+	printf("%s\n", __func__);
 }
 
 #endif
