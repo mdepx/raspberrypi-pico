@@ -4,6 +4,7 @@
 #include <sys/spinlock.h>
 
 #include <lib/cyw43-driver/src/cyw43.h>
+#include <lib/cyw43-driver/src/cyw43_country.h>
 
 #include <arm/raspberrypi/rp2040.h>
 
@@ -28,6 +29,13 @@ test_thr(void *arg)
 	}
 }
 
+static uint32_t
+cyw43_arch_get_country_code(void)
+{
+
+	return (CYW43_COUNTRY_WORLDWIDE);
+}
+
 int
 main(void)
 {
@@ -42,6 +50,11 @@ main(void)
 	printf("%s: initializing cyw32\n", __func__);
 	cyw43_init(&cyw43_state);
 	printf("%s: cyw43_init returned\n", __func__);
+
+	cyw43_wifi_set_up(&cyw43_state, CYW43_ITF_STA, true,
+	    cyw43_arch_get_country_code());
+
+	printf("%s: cyw43_wifi_set_up returned\n", __func__);
 
 	while (1)
 		mdx_usleep(50000);
