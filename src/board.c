@@ -46,7 +46,6 @@ static struct rp2040_xosc_softc xosc_sc;
 static struct rp2040_clocks_softc clocks_sc;
 static struct rp2040_gpio_softc gpio_sc;
 static struct rp2040_resets_softc resets_sc;
-static struct rp2040_io_bank0_softc io_bank0_sc;
 static struct rp2040_uart_softc uart_sc;
 static struct rp2040_uart_softc uart1_sc;
 static struct rp2040_pll_softc pll_sys_sc;
@@ -56,6 +55,8 @@ static struct rp2040_sio_softc sio_sc;
 static struct rp2040_watchdog_softc watchdog_sc;
 static struct rp2040_pio_softc pio_sc;
 static struct arm_nvic_softc nvic_sc;
+
+struct rp2040_io_bank0_softc io_bank0_sc;
 
 struct mdx_device dev_nvic = { .sc = &nvic_sc };
 struct mdx_device dev_uart = { .sc = &uart_sc };
@@ -172,7 +173,7 @@ board_init(void)
 	rp2040_watchdog_init(&watchdog_sc, RP2040_WATCHDOG_BASE);
 	rp2040_xosc_init(&xosc_sc, RP2040_XOSC_BASE);
 	rp2040_sio_init(&sio_sc, RP2040_SIO_BASE);
-	rp2040_gpio_init(&dev_gpio, RP2040_SIO_BASE);
+	rp2040_gpio_init(&dev_gpio, RP2040_SIO_BASE, RP2040_PADS_BANK0_BASE);
 	rp2040_psm_init(&psm_sc, RP2040_PSM_BASE);
 	rp2040_pio_init(&dev_pio, RP2040_PIO0_BASE);
 

@@ -3,9 +3,13 @@
 #include <lib/cyw43-driver/src/cyw43_spi.h>
 
 #include <arch/arm/raspberrypi/rp2040_pio.h>
+#include <arch/arm/raspberrypi/rp2040_io_bank0.h>
 #include <arch/arm/raspberrypi/rp2040_pio_regs.h>
 
+#include <dev/gpio/gpio.h>
+
 extern struct mdx_device dev_pio;
+extern struct rp2040_io_bank0_softc io_bank0_sc;
 
 #define	WL_REG_ON	23
 #define	DATA_OUT_PIN	24u
@@ -159,11 +163,13 @@ cyw43_spi_deinit(cyw43_int_t *self)
 	printf("%s\n", __func__);
 }
 
-void
-cyw43_spi_reset(void)
+static void
+cyw43_gpio_init(int pin)
 {
 
-	printf("%s\n", __func__);
+	mdx_gpio_configure(&dev_gpio, pin, MDX_GPIO_INPUT);
+	mdx_gpio_set(&dev_gpio, pin, 0);
+	rp2040_io_bank0_funcsel(&io_bank0_sc, pin, GPIO_FUNC_SIO);
 }
 
 void
@@ -171,6 +177,32 @@ cyw43_spi_gpio_setup(void)
 {
 
 	printf("%s\n", __func__);
+
+	cyw43_gpio_init(WL_REG_ON);
+	mdx_gpio_configure(&dev_gpio, WL_REG_ON,
+	    MDX_GPIO_OUTPUT | MDX_GPIO_PULL_UP);
+
+	cyw43_gpio_init(DATA_OUT_PIN);
+	mdx_gpio_configure(&dev_gpio, DATA_OUT_PIN, MDX_GPIO_OUTPUT);
+	mdx_gpio_set(&dev_gpio, DATA_OUT_PIN, 0);
+
+	cyw43_gpio_init(CS_PIN);
+	mdx_gpio_configure(&dev_gpio, CS_PIN, MDX_GPIO_OUTPUT);
+	mdx_gpio_set(&dev_gpio, CS_PIN, 1);
+}
+
+void
+cyw43_spi_reset(void)
+{
+
+	mdx_gpio_set(&dev_gpio, WL_REG_ON, 0);
+	usleep(20000);
+
+	mdx_gpio_set(&dev_gpio, WL_REG_ON, 1);
+	usleep(250000);
+
+	cyw43_gpio_init(IRQ_PIN);
+	mdx_gpio_configure(&dev_gpio, IRQ_PIN, MDX_GPIO_INPUT);
 }
 
 int
