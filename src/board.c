@@ -54,12 +54,14 @@ static struct rp2040_pll_softc pll_usb_sc;
 static struct rp2040_psm_softc psm_sc;
 static struct rp2040_sio_softc sio_sc;
 static struct rp2040_watchdog_softc watchdog_sc;
+static struct rp2040_pio_softc pio_sc;
 static struct arm_nvic_softc nvic_sc;
 
 struct mdx_device dev_nvic = { .sc = &nvic_sc };
 struct mdx_device dev_uart = { .sc = &uart_sc };
 struct mdx_device dev_uart1 = { .sc = &uart1_sc };
 struct mdx_device dev_gpio = { .sc = &gpio_sc };
+struct mdx_device dev_pio = { .sc = &pio_sc };
 
 extern uint8_t idle_thread_stack[MDX_CPU_MAX][MDX_THREAD_STACK_SIZE];
 extern uint8_t intr_stack[MDX_CPU_MAX][MDX_ARM_INTR_STACK_SIZE];
@@ -172,6 +174,7 @@ board_init(void)
 	rp2040_sio_init(&sio_sc, RP2040_SIO_BASE);
 	rp2040_gpio_init(&dev_gpio, RP2040_SIO_BASE);
 	rp2040_psm_init(&psm_sc, RP2040_PSM_BASE);
+	rp2040_pio_init(&dev_pio, RP2040_PIO0_BASE);
 
 	rp2040_resets_init(&resets_sc, RP2040_RESETS_BASE);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_UART0, 1);
