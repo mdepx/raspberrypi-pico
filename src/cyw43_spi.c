@@ -119,8 +119,10 @@ cyw43_write_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 int
 cyw43_spi_init(cyw43_int_t *self)
 {
+	struct rp2040_pio_sm_config config;
 	int pio_offset;
 	int error;
+	int sm;
 
 	error = pio_can_add_program(&dev_pio, &pio_program);
 
@@ -129,8 +131,6 @@ cyw43_spi_init(cyw43_int_t *self)
 	pio_offset = pio_add_program(&dev_pio, &pio_program);
 
 	printf("%s: program offset %x\n", __func__, pio_offset);
-
-	struct rp2040_pio_sm_config config;
 
 	memset(&config, 0, sizeof(struct rp2040_pio_sm_config));
 
@@ -142,9 +142,12 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_sm_config_set_sideset_pins(&config, CLOCK_PIN);
 	rp2040_sm_config_set_in_shift(&config, false, true, 32);
 	rp2040_sm_config_set_out_shift(&config, false, true, 32);
-
 	rp2040_sm_config_set_clkdiv_int_frac(&config, CLOCK_DIV,
 	    CLOCK_DIV_MINOR);
+
+	sm = 1;
+
+	rp2040_pio_sm_init(&dev_pio, sm, pio_offset, &config);
 
 	return (0);
 }
