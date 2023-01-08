@@ -14,6 +14,10 @@ extern struct mdx_device dev_pio;
 #define	CLOCK_PIN	29u
 #define	CS_PIN		25u
 
+/* Based on 125MHz cpu freq. */
+#define	CLOCK_DIV	2
+#define	CLOCK_DIV_MINOR	0
+
 /*
  * spi_gap01_sample0 program;
  * see pico-sdk/src/rp2_common/cyw43_driver/cyw43_bus_pio_spi.pio.
@@ -128,6 +132,8 @@ cyw43_spi_init(cyw43_int_t *self)
 
 	struct rp2040_pio_sm_config config;
 
+	memset(&config, 0, sizeof(struct rp2040_pio_sm_config));
+
 	rp2040_pio_get_default_sm_config(&dev_pio, &config);
 	rp2040_sm_config_set_out_pins(&config, DATA_OUT_PIN, 1);
 	rp2040_sm_config_set_in_pins(&config, DATA_IN_PIN);
@@ -136,6 +142,9 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_sm_config_set_sideset_pins(&config, CLOCK_PIN);
 	rp2040_sm_config_set_in_shift(&config, false, true, 32);
 	rp2040_sm_config_set_out_shift(&config, false, true, 32);
+
+	rp2040_sm_config_set_clkdiv_int_frac(&config, CLOCK_DIV,
+	    CLOCK_DIV_MINOR);
 
 	return (0);
 }
