@@ -118,6 +118,10 @@ cyw43_spi_init(cyw43_int_t *self)
 
 	printf("%s: program offset %x\n", __func__, pio_offset);
 
+	struct rp2040_pio_sm_config config;
+
+	rp2040_pio_get_default_sm_config(&dev_pio, &config);
+
 	return (0);
 }
 
