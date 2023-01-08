@@ -195,11 +195,13 @@ void
 cyw43_spi_reset(void)
 {
 
+	printf("%s\n", __func__);
+
 	mdx_gpio_set(&dev_gpio, WL_REG_ON, 0);
-	usleep(20000);
+	udelay(20000);
 
 	mdx_gpio_set(&dev_gpio, WL_REG_ON, 1);
-	usleep(250000);
+	udelay(250000);
 
 	cyw43_gpio_init(IRQ_PIN);
 	mdx_gpio_configure(&dev_gpio, IRQ_PIN, MDX_GPIO_INPUT);
