@@ -3,8 +3,16 @@
 #include <lib/cyw43-driver/src/cyw43_spi.h>
 
 #include <arch/arm/raspberrypi/rp2040_pio.h>
+#include <arch/arm/raspberrypi/rp2040_pio_regs.h>
 
 extern struct mdx_device dev_pio;
+
+#define	WL_REG_ON	23
+#define	DATA_OUT_PIN	24u
+#define	DATA_IN_PIN	24u
+#define	IRQ_PIN		24u
+#define	CLOCK_PIN	29u
+#define	CS_PIN		25u
 
 /*
  * spi_gap01_sample0 program;
@@ -121,6 +129,13 @@ cyw43_spi_init(cyw43_int_t *self)
 	struct rp2040_pio_sm_config config;
 
 	rp2040_pio_get_default_sm_config(&dev_pio, &config);
+	rp2040_sm_config_set_out_pins(&config, DATA_OUT_PIN, 1);
+	rp2040_sm_config_set_in_pins(&config, DATA_IN_PIN);
+	rp2040_sm_config_set_set_pins(&config, DATA_OUT_PIN, 1);
+	rp2040_sm_config_set_sideset(&config, 1, false, false);
+	rp2040_sm_config_set_sideset_pins(&config, CLOCK_PIN);
+	rp2040_sm_config_set_in_shift(&config, false, true, 32);
+	rp2040_sm_config_set_out_shift(&config, false, true, 32);
 
 	return (0);
 }
