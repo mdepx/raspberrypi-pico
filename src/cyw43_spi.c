@@ -1,3 +1,5 @@
+#include <sys/endian.h>
+
 #include <lib/cyw43-driver/src/cyw43.h>
 #include <lib/cyw43-driver/src/cyw43_internal.h>
 #include <lib/cyw43-driver/src/cyw43_spi.h>
@@ -44,13 +46,43 @@ static const rp2040_pio_program_t pio_program = {
 	.origin		= -1,
 };
 
+#define	SWAP32	bswap32
+
+static inline uint32_t
+make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
+{
+
+	return write << 31 | inc << 30 | fn << 28 | (addr & 0x1ffff) << 11 | sz;
+}
+
+int
+cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
+    uint8_t *rx, size_t rx_length)
+{
+
+	printf("%s\n", __func__);
+
+	return (0);
+}
+
 uint32_t
 read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
+	uint32_t buf[2];
+	int error;
+
+	assert(fn != BACKPLANE_FUNCTION);
 
 	printf("%s: fn %x reg %x\n", __func__, fn, reg);
 
-	return (0);
+	buf[0] = SWAP32(make_cmd(false, true, fn, reg, 4));
+	buf[1] = 0;
+
+	error = cyw43_spi_transfer(self, NULL, 4, (uint8_t *)buf, 8);
+	if (error != 0)
+		return (error);
+
+	return (SWAP32(buf[1]));
 }
 
 static uint32_t
@@ -103,21 +135,27 @@ int
 cyw43_write_reg_u32(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 {
 
-    return _cyw43_write_reg(self, fn, reg, val, 4);
+	printf("%s\n", __func__);
+
+	return _cyw43_write_reg(self, fn, reg, val, 4);
 }
 
 int
 cyw43_write_reg_u16(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint16_t val)
 {
 
-    return _cyw43_write_reg(self, fn, reg, val, 2);
+	printf("%s\n", __func__);
+
+	return _cyw43_write_reg(self, fn, reg, val, 2);
 }
 
 int
 cyw43_write_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 {
 
-    return _cyw43_write_reg(self, fn, reg, val, 1);
+	printf("%s\n", __func__);
+
+	return _cyw43_write_reg(self, fn, reg, val, 1);
 }
 
 int
@@ -178,6 +216,8 @@ cyw43_spi_deinit(cyw43_int_t *self)
 static void
 cyw43_gpio_init(int pin)
 {
+
+	printf("%s\n", __func__);
 
 	mdx_gpio_configure(&dev_gpio, pin, MDX_GPIO_INPUT);
 	mdx_gpio_set(&dev_gpio, pin, 0);
