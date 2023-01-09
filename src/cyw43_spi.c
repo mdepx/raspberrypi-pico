@@ -149,6 +149,15 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_sm_config_set_clkdiv_int_frac(&config, CLOCK_DIV,
 	    CLOCK_DIV_MINOR);
 
+	mdx_gpio_configure(&dev_gpio, CLOCK_PIN,
+	    MDX_GPIO_SPEED_HIGH | MDX_GPIO_SLEW_FAST);
+
+	rp2040_io_bank0_funcsel(&io_bank0_sc, CLOCK_PIN, GPIO_FUNC_SIO);
+	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_OUT_PIN, GPIO_FUNC_SIO);
+
+	mdx_gpio_configure(&dev_gpio, DATA_IN_PIN,
+	    MDX_GPIO_PULL_DOWN | MDX_GPIO_HYSTERESIS_EN);
+
 	sm = 1;
 
 	rp2040_pio_sm_init(&dev_pio, sm, pio_offset, &config);
