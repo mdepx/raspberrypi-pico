@@ -7,6 +7,7 @@
 #include <arch/arm/raspberrypi/rp2040_pio.h>
 #include <arch/arm/raspberrypi/rp2040_io_bank0.h>
 #include <arch/arm/raspberrypi/rp2040_pio_regs.h>
+#include <arch/arm/raspberrypi/rp2040_pio_instructions.h>
 
 #include <dev/gpio/gpio.h>
 
@@ -28,6 +29,17 @@ extern struct rp2040_io_bank0_softc io_bank0_sc;
  * spi_gap01_sample0 program;
  * see pico-sdk/src/rp2_common/cyw43_driver/cyw43_bus_pio_spi.pio.
  */
+
+typedef struct {
+	mdx_device_t pio;
+	uint8_t pio_func_sel;
+	int8_t pio_offset;
+	int8_t pio_sm;
+	int8_t dma_out;
+	int8_t dma_in;
+} bus_data_t;
+
+static bus_data_t bus_data;
 
 static const uint16_t
 cyw_program_instructions[] =
@@ -55,12 +67,50 @@ make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
 	return write << 31 | inc << 30 | fn << 28 | (addr & 0x1ffff) << 11 | sz;
 }
 
+static void
+start_spi_comms(void)
+{
+
+	/* Drive CS low. */
+	mdx_gpio_set(&dev_gpio, CS_PIN, 0);
+	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_OUT_PIN,
+	    bus_data.pio_func_sel);
+}
+
 int
 cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
     uint8_t *rx, size_t rx_length)
 {
 
 	printf("%s\n", __func__);
+
+	start_spi_comms();
+
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
+#if 0
+	rp2040_pio_sm_set_wrap(bus_data.pio, bus_data.pio_sm,
+	    bus_data.pio_offset, bus_data.pio_offset + SPI_OFFSET_END - 1);
+#endif
+	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
+#if 0
+	rp2040_pio_sm_set_pindirs_with_mask(bus_data.pio, bus_data.pio_sm,
+	    1u << DATA_OUT_PIN, 1u << DATA_OUT_PIN);
+#endif
+	rp2040_pio_sm_restart(bus_data.pio, bus_data.pio_sm);
+	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
+
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_jmp(bus_data.pio_offset));
+
+	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
+	    32 * ((tx_length + 3) / 4) + 31);
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_out(pio_x, 32));
+	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm, 0);
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_out(pio_y, 32));
+
+	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
 
 	return (0);
 }
@@ -162,17 +212,20 @@ int
 cyw43_spi_init(cyw43_int_t *self)
 {
 	struct rp2040_pio_sm_config config;
-	int pio_offset;
 	int error;
-	int sm;
 
 	error = pio_can_add_program(&dev_pio, &pio_program);
 
 	printf("%s: error %d\n", __func__, error);
 
-	pio_offset = pio_add_program(&dev_pio, &pio_program);
+	bus_data.pio = &dev_pio;
+	bus_data.pio_offset = pio_add_program(&dev_pio, &pio_program);
+	bus_data.pio_sm = 1;
+	bus_data.dma_out = 0;
+	bus_data.dma_in = 1;
+	bus_data.pio_func_sel = GPIO_FUNC_PIO0;
 
-	printf("%s: program offset %x\n", __func__, pio_offset);
+	printf("%s: program offset %x\n", __func__, bus_data.pio_offset);
 
 	memset(&config, 0, sizeof(struct rp2040_pio_sm_config));
 
@@ -190,17 +243,19 @@ cyw43_spi_init(cyw43_int_t *self)
 	mdx_gpio_configure(&dev_gpio, CLOCK_PIN,
 	    MDX_GPIO_SPEED_HIGH | MDX_GPIO_SLEW_FAST);
 
-	rp2040_io_bank0_funcsel(&io_bank0_sc, CLOCK_PIN, GPIO_FUNC_PIO0);
-	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_OUT_PIN, GPIO_FUNC_PIO0);
+	rp2040_io_bank0_funcsel(&io_bank0_sc, CLOCK_PIN,
+	    bus_data.pio_func_sel);
+	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_OUT_PIN,
+	    bus_data.pio_func_sel);
 
-	sm = 1;
-
-	rp2040_pio_sm_set_consecutive_pindirs(&dev_pio, sm, CLOCK_PIN, 1, true);
+	rp2040_pio_sm_set_consecutive_pindirs(&dev_pio, bus_data.pio_sm,
+	    CLOCK_PIN, 1, true);
 
 	mdx_gpio_configure(&dev_gpio, DATA_IN_PIN,
 	    MDX_GPIO_PULL_DOWN | MDX_GPIO_HYSTERESIS_EN);
 
-	rp2040_pio_sm_init(&dev_pio, sm, pio_offset, &config);
+	rp2040_pio_sm_init(&dev_pio, bus_data.pio_sm, bus_data.pio_offset,
+	    &config);
 	rp2040_pio_set_input_sync_bypass(&dev_pio, DATA_IN_PIN, true);
 
 	return (0);
