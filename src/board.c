@@ -43,6 +43,7 @@
 
 static struct rp2040_timer_softc timer_sc;
 static struct rp2040_xosc_softc xosc_sc;
+static struct rp2040_dma_softc dma_sc;
 static struct rp2040_clocks_softc clocks_sc;
 static struct rp2040_gpio_softc gpio_sc;
 static struct rp2040_resets_softc resets_sc;
@@ -63,6 +64,7 @@ struct mdx_device dev_uart = { .sc = &uart_sc };
 struct mdx_device dev_uart1 = { .sc = &uart1_sc };
 struct mdx_device dev_gpio = { .sc = &gpio_sc };
 struct mdx_device dev_pio = { .sc = &pio_sc };
+struct mdx_device dev_dma = { .sc = &dma_sc };
 
 extern uint8_t idle_thread_stack[MDX_CPU_MAX][MDX_THREAD_STACK_SIZE];
 extern uint8_t intr_stack[MDX_CPU_MAX][MDX_ARM_INTR_STACK_SIZE];

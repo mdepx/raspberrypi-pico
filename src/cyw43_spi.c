@@ -4,6 +4,7 @@
 #include <lib/cyw43-driver/src/cyw43_internal.h>
 #include <lib/cyw43-driver/src/cyw43_spi.h>
 
+#include <arch/arm/raspberrypi/rp2040_dma.h>
 #include <arch/arm/raspberrypi/rp2040_pio.h>
 #include <arch/arm/raspberrypi/rp2040_io_bank0.h>
 #include <arch/arm/raspberrypi/rp2040_pio_regs.h>
@@ -13,6 +14,7 @@
 
 extern struct mdx_device dev_pio;
 extern struct rp2040_io_bank0_softc io_bank0_sc;
+extern struct mdx_device dev_dma;
 
 #define	WL_REG_ON	23
 #define	DATA_OUT_PIN	24u
@@ -92,25 +94,28 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	    bus_data.pio_offset, bus_data.pio_offset + SPI_OFFSET_END - 1);
 #endif
 	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
-#if 0
 	rp2040_pio_sm_set_pindirs_with_mask(bus_data.pio, bus_data.pio_sm,
 	    1u << DATA_OUT_PIN, 1u << DATA_OUT_PIN);
-#endif
 	rp2040_pio_sm_restart(bus_data.pio, bus_data.pio_sm);
 	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
 
-	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
-	    pio_encode_jmp(bus_data.pio_offset));
-
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
-	    32 * ((tx_length + 3) / 4) + 31);
+	    tx_length * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_out(pio_x, 32));
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm, 0);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_out(pio_y, 32));
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_jmp(bus_data.pio_offset));
 
-	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
+	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_out);
+	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_in);
+
+#if 0
+	rp2040_dma_channel_config config;
+	dma_channel_get_default_config(&dev_dma, bus_data.dma_out, &config);
+#endif
 
 	return (0);
 }
