@@ -178,6 +178,7 @@ board_init(void)
 	rp2040_gpio_init(&dev_gpio, RP2040_SIO_BASE, RP2040_PADS_BANK0_BASE);
 	rp2040_psm_init(&psm_sc, RP2040_PSM_BASE);
 	rp2040_pio_init(&dev_pio, RP2040_PIO0_BASE);
+	rp2040_dma_init(&dev_dma, RP2040_DMA_BASE);
 
 	rp2040_resets_init(&resets_sc, RP2040_RESETS_BASE);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_UART0, 1);

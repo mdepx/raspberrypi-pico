@@ -4,6 +4,7 @@
 #include <lib/cyw43-driver/src/cyw43_internal.h>
 #include <lib/cyw43-driver/src/cyw43_spi.h>
 
+#include <arch/arm/raspberrypi/rp2040.h>
 #include <arch/arm/raspberrypi/rp2040_dma.h>
 #include <arch/arm/raspberrypi/rp2040_pio.h>
 #include <arch/arm/raspberrypi/rp2040_io_bank0.h>
@@ -99,6 +100,7 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_restart(bus_data.pio, bus_data.pio_sm);
 	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
 
+	printf("%s\n", __func__);
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
 	    tx_length * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
@@ -109,11 +111,38 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_jmp(bus_data.pio_offset));
 
+	printf("%s 3\n", __func__);
 	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_out);
 	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_in);
 
+	struct rp2040_dma_channel_config out_config;
+	struct rp2040_dma_channel_config in_config;
+
+	printf("%s 4\n", __func__);
+	memset(&out_config, 0, sizeof(struct rp2040_dma_channel_config));
+	out_config.src_addr = (uint32_t)tx;
+	out_config.dst_addr = RP2040_PIO0_BASE + RP2040_PIO_TXF_OFFSET(0);
+	out_config.size = 4;
+	out_config.count = tx_length / 4;
+
+	printf("%s\n", __func__);
+	memset(&in_config, 0, sizeof(struct rp2040_dma_channel_config));
+	in_config.src_addr = RP2040_PIO0_BASE + RP2040_PIO_RXF_OFFSET(0);
+	in_config.dst_addr = (uint32_t)rx;
+	out_config.size = 4;
+	in_config.count = rx_length / 4;
+
+	printf("%s\n", __func__);
+	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
+	rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
+
+	printf("%s: set enabled true\n", __func__);
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
+
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
+
 #if 0
-	rp2040_dma_channel_config config;
 	dma_channel_get_default_config(&dev_dma, bus_data.dma_out, &config);
 #endif
 
@@ -133,9 +162,15 @@ read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 	buf[0] = SWAP32(make_cmd(false, true, fn, reg, 4));
 	buf[1] = 0;
 
-	error = cyw43_spi_transfer(self, NULL, 4, (uint8_t *)buf, 8);
+	error = cyw43_spi_transfer(self, (uint8_t *)&buf[0], 4,
+	    (uint8_t *)&buf[1], 4);
 	if (error != 0)
 		return (error);
+
+	printf("%s: res %x\n", __func__, buf[1]);
+
+	while (1)
+		mdx_usleep(5000);
 
 	return (SWAP32(buf[1]));
 }
