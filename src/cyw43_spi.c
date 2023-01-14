@@ -61,7 +61,20 @@ static const rp2040_pio_program_t pio_program = {
 	.origin		= -1,
 };
 
+
+//#define SWAP32(A) ((((A) & 0xff000000U) >> 8) | (((A) & 0xff0000U) << 8) | (((A) & 0xff00U) >> 8) | (((A) & 0xffU) << 8))
+
+static uint32_t
+__swap16x2(uint32_t a) {
+    __asm ("rev16 %0, %0" : "+l" (a) : : );
+    return a;
+}
+
+#define SWAP32(a) __swap16x2(a)
+
+#if 0
 #define	SWAP32	bswap32
+#endif
 
 static inline uint32_t
 make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
@@ -84,16 +97,15 @@ int
 cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
     uint8_t *rx, size_t rx_length)
 {
+	uint32_t reg;
 
 	printf("%s\n", __func__);
 
 	start_spi_comms();
 
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
-#if 0
 	rp2040_pio_sm_set_wrap(bus_data.pio, bus_data.pio_sm,
-	    bus_data.pio_offset, bus_data.pio_offset + SPI_OFFSET_END - 1);
-#endif
+	    bus_data.pio_offset, bus_data.pio_offset + 6 - 1);
 	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
 	rp2040_pio_sm_set_pindirs_with_mask(bus_data.pio, bus_data.pio_sm,
 	    1u << DATA_OUT_PIN, 1u << DATA_OUT_PIN);
@@ -105,7 +117,8 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	    tx_length * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_out(pio_x, 32));
-	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm, 0);
+	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
+	    rx_length * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_out(pio_y, 32));
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
@@ -121,26 +134,69 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	printf("%s 4\n", __func__);
 	memset(&out_config, 0, sizeof(struct rp2040_dma_channel_config));
 	out_config.src_addr = (uint32_t)tx;
-	out_config.dst_addr = RP2040_PIO0_BASE + RP2040_PIO_TXF_OFFSET(0);
-	out_config.size = 4;
-	out_config.count = tx_length / 4;
+	out_config.src_incr = true;
+	out_config.dst_addr = RP2040_PIO0_BASE +
+	    RP2040_PIO_TXF_OFFSET(bus_data.pio_sm);
+	out_config.dst_incr = false;
+	out_config.size = 2; // 32 bit
+	out_config.count = tx_length; // 4;
+	out_config.dreq = rp2040_pio_get_dreq_offset(&dev_pio,
+	    bus_data.pio_sm, true);
+	out_config.dreq = 0; // DREQ_PIO0_TX0
 
 	printf("%s\n", __func__);
 	memset(&in_config, 0, sizeof(struct rp2040_dma_channel_config));
-	in_config.src_addr = RP2040_PIO0_BASE + RP2040_PIO_RXF_OFFSET(0);
+	in_config.src_addr = RP2040_PIO0_BASE +
+	    RP2040_PIO_RXF_OFFSET(bus_data.pio_sm);
+	in_config.src_incr = false;
 	in_config.dst_addr = (uint32_t)rx;
-	out_config.size = 4;
-	in_config.count = rx_length / 4;
+	in_config.dst_incr = true;
+	in_config.size = 2; // 32 bit
+	in_config.count = rx_length; // 4;
+	in_config.dreq = rp2040_pio_get_dreq_offset(&dev_pio,
+	    bus_data.pio_sm, false);
+	in_config.dreq = 4; // DREQ_PIO0_RX0
 
 	printf("%s\n", __func__);
 	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
-	rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
 
 	printf("%s: set enabled true\n", __func__);
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
 
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
+	printf("%s: fdebug %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FSTAT_OFFSET);
+	printf("%s: fstat %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
+	printf("%s: flevel %x\n", __func__, reg);
+
+	rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
+
 	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	udelay(20000);
+
+printf("%s: chann 1\n", __func__);
 	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
+	udelay(20000);
+	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
+	udelay(20000);
+
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
+	printf("%s: fdebug %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FSTAT_OFFSET);
+	printf("%s: fstat %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
+	printf("%s: flevel %x\n", __func__, reg);
 
 #if 0
 	dma_channel_get_default_config(&dev_dma, bus_data.dma_out, &config);
@@ -152,7 +208,7 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 uint32_t
 read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
-	uint32_t buf[2];
+	uint32_t buf[3];
 	int error;
 
 	assert(fn != BACKPLANE_FUNCTION);
@@ -163,14 +219,15 @@ read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 	buf[1] = 0;
 
 	error = cyw43_spi_transfer(self, (uint8_t *)&buf[0], 4,
-	    (uint8_t *)&buf[1], 4);
+	    (uint8_t *)&buf[1], 8);
 	if (error != 0)
 		return (error);
 
 	printf("%s: res %x\n", __func__, buf[1]);
+	printf("%s: res %x\n", __func__, buf[2]);
 
 	while (1)
-		mdx_usleep(5000);
+		udelay(10000);
 
 	return (SWAP32(buf[1]));
 }
@@ -260,7 +317,7 @@ cyw43_spi_init(cyw43_int_t *self)
 
 	bus_data.pio = &dev_pio;
 	bus_data.pio_offset = pio_add_program(&dev_pio, &pio_program);
-	bus_data.pio_sm = 1;
+	bus_data.pio_sm = 0;
 	bus_data.dma_out = 0;
 	bus_data.dma_in = 1;
 	bus_data.pio_func_sel = GPIO_FUNC_PIO0;
@@ -297,6 +354,9 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_pio_sm_init(&dev_pio, bus_data.pio_sm, bus_data.pio_offset,
 	    &config);
 	rp2040_pio_set_input_sync_bypass(&dev_pio, DATA_IN_PIN, true);
+
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_set(pio_pins, 1));
 
 	return (0);
 }
@@ -348,7 +408,7 @@ cyw43_spi_reset(void)
 	udelay(20000);
 
 	mdx_gpio_set(&dev_gpio, WL_REG_ON, 1);
-	udelay(250000);
+	udelay(25000);
 
 	cyw43_gpio_init(IRQ_PIN);
 	mdx_gpio_configure(&dev_gpio, IRQ_PIN, MDX_GPIO_INPUT);
