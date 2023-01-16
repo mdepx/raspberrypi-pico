@@ -200,12 +200,12 @@ board_init(void)
 	rp2040_clocks_setup(&clocks_sc);
 
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_IOBANK0, 0);
+	rp2040_resets_reset(&resets_sc, RESETS_RESET_PADS_BANK0, 0);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_UART0, 0);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_UART1, 0);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_TIMER, 0);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_DMA, 0);
 	rp2040_resets_reset(&resets_sc, RESETS_RESET_PIO0, 0);
-	rp2040_resets_reset(&resets_sc, RESETS_RESET_PIO1, 0);
 
 	rp2040_io_bank0_init(&io_bank0_sc, RP2040_IO_BANK0_BASE);
 	rp2040_io_bank0_funcsel(&io_bank0_sc, 0,

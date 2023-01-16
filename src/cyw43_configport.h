@@ -146,21 +146,18 @@ static inline void
 cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
     uint32_t alt __unused)
 {
-	uint32_t flags;
 
 	printf("%s: pin %d mode %d pull %d alt %d\n", __func__,
 	    pin, mode, pull, alt);
 
 	if (mode == CYW43_HAL_PIN_MODE_INPUT)
-		flags = MDX_GPIO_INPUT;
+		mdx_gpio_set_dir(&dev_gpio, pin, 0);
 	else
-		flags = MDX_GPIO_OUTPUT;
+		mdx_gpio_set_dir(&dev_gpio, pin, 1);
 
 #if 0
 	if (pull == CYW43_HAL_PIN_PULL_UP)
 #endif
-
-	mdx_gpio_configure(&dev_gpio, pin, flags);
 }
 
 #endif
