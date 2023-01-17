@@ -60,17 +60,16 @@ static const rp2040_pio_program_t pio_program = {
 	.origin		= -1,
 };
 
-
-#if 0
-#define SWAP32(A) ((((A) & 0xff000000U) >> 8) | (((A) & 0xff0000U) << 8) | (((A) & 0xff00U) >> 8) | (((A) & 0xffU) << 8))
-#else
 static uint32_t
-__swap16x2(uint32_t a) {
-    __asm ("rev16 %0, %0" : "+l" (a) : : );
-    return a;
+__swap16x2(uint32_t a)
+{
+
+	__asm("rev16 %0, %0" : "+l" (a) ::);
+
+	return (a);
 }
+
 #define SWAP32(a) __swap16x2(a)
-#endif
 
 static inline uint32_t
 make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
@@ -137,7 +136,6 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_jmp(bus_data.pio_offset));
 
-
 	printf("%s 3, pc %x\n", __func__,
 	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
 	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_out);
@@ -190,32 +188,6 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
 	udelay(1000);
 
-#if 0
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-	data = rp2040_pio_sm_get(bus_data.pio, bus_data.pio_sm);
-	printf("%s: data %x\n", __func__, data);
-
-	printf("%s 6, pc %x\n", __func__,
-	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
-
-	printf("%s: done\n", __func__);
-
-	while (1);
-#endif
-
-	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
-	printf("%s: fdebug %x\n", __func__, reg);
-	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FSTAT_OFFSET);
-	printf("%s: fstat %x\n", __func__, reg);
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
 	printf("%s: flevel %x\n", __func__, reg);
 
@@ -449,16 +421,7 @@ static void
 my_gpio_init(int pin)
 {
 
-	printf("%s: pin %d\n", __func__, pin);
 
-	mdx_gpio_set_dir(&dev_gpio, pin, 0);
-	mdx_gpio_set(&dev_gpio, pin, 0);
-	mdx_gpio_set_function(&dev_gpio, pin, GPIO_FUNC_SIO);
-	rp2040_io_bank0_funcsel(&io_bank0_sc, pin, GPIO_FUNC_SIO);
-
-	pin = 16;
-	mdx_gpio_set_dir(&dev_gpio, pin, 1);
-	mdx_gpio_set(&dev_gpio, pin, 1);
 	mdx_gpio_set_function(&dev_gpio, pin, GPIO_FUNC_SIO);
 	rp2040_io_bank0_funcsel(&io_bank0_sc, pin, GPIO_FUNC_SIO);
 }
@@ -467,15 +430,16 @@ void
 cyw43_spi_gpio_setup(void)
 {
 
+	printf("%s\n", __func__);
+
 	my_gpio_init(WL_REG_ON);
 	mdx_gpio_set_dir(&dev_gpio, WL_REG_ON, 1);
+	mdx_gpio_set(&dev_gpio, WL_REG_ON, 0);
 	mdx_gpio_configure(&dev_gpio, WL_REG_ON, MDX_GPIO_PULL_UP);
 
-#if 1
 	my_gpio_init(DATA_PIN);
 	mdx_gpio_set_dir(&dev_gpio, DATA_PIN, 1);
 	mdx_gpio_set(&dev_gpio, DATA_PIN, 0);
-#endif
 
 	my_gpio_init(CS_PIN);
 	mdx_gpio_set_dir(&dev_gpio, CS_PIN, 1);
@@ -494,6 +458,7 @@ cyw43_spi_reset(void)
 	udelay(100000);
 
 	my_gpio_init(IRQ_PIN);
+	mdx_gpio_set(&dev_gpio, IRQ_PIN, 0);
 	mdx_gpio_set_dir(&dev_gpio, IRQ_PIN, 0);
 }
 
