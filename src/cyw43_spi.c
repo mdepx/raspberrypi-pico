@@ -328,29 +328,11 @@ cyw43_write_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 	return _cyw43_write_reg(self, fn, reg, val, 1);
 }
 
-#if 0
-static void
-my_gpio_setup(void)
-{
-	int pin;
-
-	printf("%s\n", __func__);
-
-	pin = CS_PIN;
-
-	mdx_gpio_set_function(&dev_gpio, pin, GPIO_FUNC_SIO);
-	rp2040_io_bank0_funcsel(&io_bank0_sc, pin, GPIO_FUNC_SIO);
-	mdx_gpio_set_dir(&dev_gpio, pin, 1);
-}
-#endif
-
 int
 cyw43_spi_init(cyw43_int_t *self)
 {
 	struct rp2040_pio_sm_config config;
 	int error;
-
-	//my_gpio_setup();
 
 	error = pio_can_add_program(&dev_pio, &pio_program);
 
