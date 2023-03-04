@@ -119,10 +119,10 @@ printf("%s: %d\n", __func__, !enable);
 		mdx_gpio_set(&dev_gpio, pin, 0);
 		mdx_gpio_set_function(&dev_gpio, DATA_PIN, bus_data.pio_func_sel);
 		rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_PIN, bus_data.pio_func_sel);
-	} else
+	} else {
 		mdx_gpio_set(&dev_gpio, pin, 1);
-
-	udelay(100);
+		udelay(100);
+	}
 }
 
 int
@@ -207,7 +207,8 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm, data);
 #endif
 
-	rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
+	if (rx_length)
+		rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
 	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
 
 	printf("%s: set enabled true\n", __func__);
@@ -217,16 +218,16 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
 	printf("%s: flevel %x\n", __func__, reg);
 
-	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
-	udelay(20000);
-	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
-	udelay(20000);
+	int ret;
+	do {
+		ret = rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	} while (ret);
 
-printf("%s: chann 1\n", __func__);
-	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
-	udelay(20000);
-	rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
-	udelay(20000);
+	do {
+		ret = rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_in);
+	} while (ret);
+
+	udelay(10000);
 
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
 	printf("%s: fdebug %x\n", __func__, reg);
@@ -242,7 +243,7 @@ printf("%s: chann 1\n", __func__);
 	    pio_encode_mov(pio_pins, pio_null));
 
 	printf("%s: set enabled false\n", __func__);
-	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
+	//rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
 
 	cs_enable(false);
 
@@ -284,10 +285,28 @@ read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 static uint32_t
 _cyw43_read_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint size)
 {
+	uint32_t buf32[3];
+	uint32_t padding;
+	uint32_t result;
+	int error;
 
-	printf("%s\n", __func__);
+	padding = (fn == BACKPLANE_FUNCTION) ? 4 : 0;
 
-	return (0);
+	buf32[0] = make_cmd(false, true, fn, reg, size + padding);
+
+	error = cyw43_spi_transfer(self, (uint8_t *)&buf32[0], 4,
+	    (uint8_t *)&buf32[1], 4 + padding);
+
+	printf("%s: error %d\n", __func__, error);
+
+	if (error != 0)
+		return (error);
+
+	result = buf32[padding > 0 ? 2 : 1];
+
+	printf("%s: result %x\n", __func__, result);
+
+	return (result);
 }
 
 uint32_t
@@ -317,14 +336,21 @@ cyw43_read_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 	return _cyw43_read_reg(self, fn, reg, 1);
 }
 
-static inline int
+static int
 _cyw43_write_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val,
     uint size)
 {
+	uint32_t buf[2];
+	int error;
 
-	printf("%s\n", __func__);
+	buf[0] = make_cmd(true, true, fn, reg, size);
+	buf[1] = val;
 
-	return (0);
+	error = cyw43_spi_transfer(self, (uint8_t *)buf, 8, NULL, 0);
+
+	printf("%s: error %d\n", __func__, error);
+
+	return (error);
 }
 
 int
@@ -380,6 +406,7 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_sm_config_set_clkdiv_int_frac(&config, CLOCK_DIV,
 	    CLOCK_DIV_MINOR);
 
+	// //
 	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_PIN, bus_data.pio_func_sel);
 	mdx_gpio_set_function(&dev_gpio, DATA_PIN, bus_data.pio_func_sel);
 	mdx_gpio_configure(&dev_gpio, DATA_PIN,
@@ -473,8 +500,17 @@ cyw43_spi_reset(void)
 int
 write_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 {
+	uint32_t buf[2];
+	int error;
 
 	printf("%s\n", __func__);
 
-	return (0);
+	buf[0] = SWAP32(make_cmd(false, true, fn, reg, 4));
+	buf[1] = SWAP32(val);
+
+	error = cyw43_spi_transfer(self, (uint8_t *)buf, 8, NULL, 0);
+
+	printf("%s: returned %d\n", __func__, error);
+
+	return (error);
 }
