@@ -140,7 +140,7 @@ cyw43_read_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
 	uint32_t padding;
 	int ret;
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	padding = (fn == BACKPLANE_FUNCTION) ? 4 : 0;
 	aligned_len = (len + 3) & ~3;
