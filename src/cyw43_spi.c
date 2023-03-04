@@ -135,11 +135,11 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
 	rp2040_pio_sm_set_wrap(bus_data.pio, bus_data.pio_sm,
-	    bus_data.pio_offset, bus_data.pio_offset + 2);
+	    bus_data.pio_offset, bus_data.pio_offset + 5);
 	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
 
 	reg = (1u << DATA_PIN) | (1u << CLOCK_PIN);
-	reg = (1u << DATA_PIN);
+	//reg = (1u << DATA_PIN);
 	rp2040_pio_sm_set_pindirs_with_mask(bus_data.pio, bus_data.pio_sm,
 	    reg, reg);
 
@@ -186,7 +186,7 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
 
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
-	rp2040_pio_sm_set_consecutive_pindirs(bus_data.pio, bus_data.pio_sm, DATA_PIN, 1, false);
+	//rp2040_pio_sm_set_consecutive_pindirs(bus_data.pio, bus_data.pio_sm, DATA_PIN, 1, false);
 
 	//reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
 	//printf("%s: flevel %x\n", __func__, reg);
@@ -195,7 +195,7 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	do {
 		ret = rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
 	} while (ret);
-	udelay(1000);
+	udelay(10000);
 
 #if 0
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);

@@ -26,6 +26,7 @@
 
 #include <lib/cyw43-driver/src/cyw43.h>
 #include <lib/cyw43-driver/src/cyw43_internal.h>
+#include <lib/cyw43-driver/src/cyw43_spi.h>
 
 #include <cyw43_spi.h>
 
@@ -135,9 +136,32 @@ int
 cyw43_read_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
     uint8_t *buf)
 {
+	size_t aligned_len;
+	uint32_t padding;
+	int ret;
 
 	printf("%s\n", __func__);
-	panic("implement me");
+
+	padding = (fn == BACKPLANE_FUNCTION) ? 4 : 0;
+	aligned_len = (len + 3) & ~3;
+	self->spi_header[padding > 0 ? 0 : 1] = make_cmd(false, true, fn, addr,
+	    len + padding);
+
+	if (padding > 0) {
+		ret = cyw43_spi_transfer(self, (uint8_t *)&self->spi_header[0],
+		    4, (uint8_t *)&self->spi_header[1], aligned_len + padding);
+	} else {
+		ret = cyw43_spi_transfer(self, (uint8_t *)&self->spi_header[1],
+		    4, (uint8_t *)&self->spid_buf[0], aligned_len);
+	}
+
+	if (ret != 0) {
+		printf("cyw43_read_bytes error %d", ret);
+		return (ret);
+	}
+
+	if (buf != self->spid_buf)
+		memcpy(buf, self->spid_buf, len);
 
 	return (0);
 }
@@ -165,20 +189,21 @@ cyw43_write_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
 		}
 		if (f2_ready_attempts <= 0) {
 			printf("F2 not ready\n");
+			panic("vvvv");
 			return CYW43_FAIL_FAST_CHECK(-CYW43_EIO);
 		}
 	}
 
 	if (src == self->spid_buf) {
 		self->spi_header[1] = make_cmd(true, true, fn, addr, len);
-		printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
+		//printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
 		res = cyw43_spi_transfer2(self, (uint8_t *)&self->spi_header[1],
 		    aligned_len + 4, NULL, 0);
 		return (res);
 	} else {
 		self->spi_header[1] = make_cmd(true, true, fn, addr, len);
 		memcpy(self->spid_buf, src, len);
-		printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
+		//printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
 		res = cyw43_spi_transfer2(self, (uint8_t *)&self->spi_header[1],
 		    aligned_len + 4, NULL, 0);
 		return (res);
