@@ -123,7 +123,7 @@ static inline uint32_t
 cyw43_hal_ticks_us(void)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return 0;
 }
@@ -132,7 +132,7 @@ static inline uint32_t
 cyw43_hal_ticks_ms(void)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return 0;
 }

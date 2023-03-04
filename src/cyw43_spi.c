@@ -194,9 +194,10 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 		error = rp2040_pio_check_tx_stall(&dev_pio, bus_data.pio_sm);
 	} while (!error);
 
-#if 0
-	//rp2040_pio_sm_set_consecutive_pindirs(bus_data.pio, bus_data.pio_sm, DATA_PIN, 1, false);
+	rp2040_pio_sm_set_consecutive_pindirs(bus_data.pio, bus_data.pio_sm,
+	    DATA_PIN, 1, false);
 
+#if 0
 	//reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
 	//printf("%s: flevel %x\n", __func__, reg);
 
@@ -415,7 +416,7 @@ _cyw43_read_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint size)
 
 	result = buf[padding > 0 ? 2 : 1];
 
-	printf("%s: result %x\n", __func__, result);
+	//printf("%s: result %x\n", __func__, result);
 
 	return (result);
 }
@@ -424,7 +425,7 @@ uint32_t
 cyw43_read_reg_u32(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_read_reg(self, fn, reg, 4);
 }
@@ -433,7 +434,7 @@ int
 cyw43_read_reg_u16(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_read_reg(self, fn, reg, 2);
 }
@@ -442,7 +443,7 @@ int
 cyw43_read_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_read_reg(self, fn, reg, 1);
 }
@@ -476,7 +477,7 @@ int
 cyw43_write_reg_u32(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_write_reg(self, fn, reg, val, 4);
 }
@@ -485,7 +486,7 @@ int
 cyw43_write_reg_u16(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint16_t val)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_write_reg(self, fn, reg, val, 2);
 }
@@ -494,7 +495,7 @@ int
 cyw43_write_reg_u8(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 {
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 
 	return _cyw43_write_reg(self, fn, reg, val, 1);
 }
