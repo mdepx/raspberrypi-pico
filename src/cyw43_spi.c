@@ -39,6 +39,8 @@
 
 #include <dev/gpio/gpio.h>
 
+#include <cyw43_spi.h>
+
 extern struct mdx_device dev_pio;
 extern struct rp2040_io_bank0_softc io_bank0_sc;
 extern struct mdx_device dev_dma;
@@ -97,13 +99,6 @@ __swap16x2(uint32_t a)
 
 #define SWAP32(a) __swap16x2(a)
 
-static inline uint32_t
-make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
-{
-
-	return write << 31 | inc << 30 | fn << 28 | (addr & 0x1ffff) << 11 | sz;
-}
-
 static void
 cs_enable(int enable)
 {
@@ -111,7 +106,7 @@ cs_enable(int enable)
 
 	pin = CS_PIN;
 
-printf("%s: %d\n", __func__, !enable);
+//printf("%s: %d\n", __func__, !enable);
 
 	/* Drive CS low. */
 
@@ -123,6 +118,110 @@ printf("%s: %d\n", __func__, !enable);
 		mdx_gpio_set(&dev_gpio, pin, 1);
 		udelay(100);
 	}
+}
+
+int
+cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
+    uint8_t *rx, size_t rx_length)
+{
+	uint32_t reg;
+
+	printf("%s: %d\n", __func__, tx_length);
+
+	if (rx_length)
+		panic("aaa");
+
+	cs_enable(true);
+
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
+	rp2040_pio_sm_set_wrap(bus_data.pio, bus_data.pio_sm,
+	    bus_data.pio_offset, bus_data.pio_offset + 2);
+	rp2040_pio_sm_clear_fifos(bus_data.pio, bus_data.pio_sm);
+
+	reg = (1u << DATA_PIN) | (1u << CLOCK_PIN);
+	reg = (1u << DATA_PIN);
+	rp2040_pio_sm_set_pindirs_with_mask(bus_data.pio, bus_data.pio_sm,
+	    reg, reg);
+
+	rp2040_pio_sm_restart(bus_data.pio, bus_data.pio_sm);
+	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
+
+	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
+	    tx_length * 8 - 1);
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_out(pio_x, 32));
+
+	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm, 0);
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_out(pio_y, 32));
+
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_jmp(bus_data.pio_offset));
+
+#if 0
+	printf("%s 3, pc %x\n", __func__,
+	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
+#endif
+	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_out);
+
+	struct rp2040_dma_channel_config out_config;
+
+	memset(&out_config, 0, sizeof(struct rp2040_dma_channel_config));
+	out_config.src_addr = (uint32_t)tx;
+	out_config.src_incr = true;
+	out_config.dst_addr = RP2040_PIO0_BASE +
+	    RP2040_PIO_TXF_OFFSET(bus_data.pio_sm);
+	out_config.dst_incr = false;
+	out_config.size = 2; // 32 bit
+	out_config.count = tx_length / 4;
+	out_config.dreq = rp2040_pio_get_dreq_offset(&dev_pio,
+	    bus_data.pio_sm, true);
+	out_config.dreq = 0 + bus_data.pio_sm; // DREQ_PIO0_TX0
+
+#if 0
+	printf("%s 5, pc %x\n", __func__,
+	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
+#endif
+
+	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
+
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
+	rp2040_pio_sm_set_consecutive_pindirs(bus_data.pio, bus_data.pio_sm, DATA_PIN, 1, false);
+
+	//reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
+	//printf("%s: flevel %x\n", __func__, reg);
+
+	int ret;
+	do {
+		ret = rp2040_dma_channel_is_busy(&dev_dma, bus_data.dma_out);
+	} while (ret);
+	udelay(1000);
+
+#if 0
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
+	printf("%s: fdebug %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FSTAT_OFFSET);
+	printf("%s: fstat %x\n", __func__, reg);
+	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
+
+	printf("%s: flevel %x\n", __func__, reg);
+	printf("%s 7, pc %x\n", __func__,
+	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
+#endif
+
+	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
+	    pio_encode_mov(pio_pins, pio_null));
+
+	//printf("%s: set enabled false\n", __func__);
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
+
+	cs_enable(false);
+
+#if 0
+	dma_channel_get_default_config(&dev_dma, bus_data.dma_out, &config);
+#endif
+
+	return (0);
 }
 
 int
@@ -148,7 +247,7 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_restart(bus_data.pio, bus_data.pio_sm);
 	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
 	    tx_length * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
@@ -162,15 +261,15 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_jmp(bus_data.pio_offset));
 
-	printf("%s 3, pc %x\n", __func__,
-	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
+	//printf("%s 3, pc %x\n", __func__,
+	//    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
 	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_out);
 	rp2040_dma_channel_abort(&dev_dma, bus_data.dma_in);
 
 	struct rp2040_dma_channel_config out_config;
 	struct rp2040_dma_channel_config in_config;
 
-	printf("%s 4\n", __func__);
+	//printf("%s 4\n", __func__);
 	memset(&out_config, 0, sizeof(struct rp2040_dma_channel_config));
 	out_config.src_addr = (uint32_t)tx;
 	out_config.src_incr = true;
@@ -183,7 +282,7 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	    bus_data.pio_sm, true);
 	out_config.dreq = 0 + bus_data.pio_sm; // DREQ_PIO0_TX0
 
-	printf("%s\n", __func__);
+	//printf("%s\n", __func__);
 	memset(&in_config, 0, sizeof(struct rp2040_dma_channel_config));
 	in_config.src_addr = RP2040_PIO0_BASE +
 	    RP2040_PIO_RXF_OFFSET(bus_data.pio_sm);
@@ -196,10 +295,10 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	    bus_data.pio_sm, false);
 	in_config.dreq = 4 + bus_data.pio_sm; // DREQ_PIO0_RX0
 
+#if 0
 	printf("%s 5, pc %x\n", __func__,
 	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
 
-#if 0
 	udelay(20000);
 	uint32_t data;
 	data = *(const uint32_t *)tx;
@@ -211,12 +310,12 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 		rp2040_dma_configure(&dev_dma, bus_data.dma_in, &in_config);
 	rp2040_dma_configure(&dev_dma, bus_data.dma_out, &out_config);
 
-	printf("%s: set enabled true\n", __func__);
+	//printf("%s: set enabled true\n", __func__);
 	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, true);
 	udelay(1000);
 
-	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
-	printf("%s: flevel %x\n", __func__, reg);
+	//reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FLEVEL_OFFSET);
+	//printf("%s: flevel %x\n", __func__, reg);
 
 	int ret;
 	do {
@@ -229,6 +328,7 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 
 	udelay(10000);
 
+#if 0
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FDEBUG_OFFSET);
 	printf("%s: fdebug %x\n", __func__, reg);
 	reg = rp2040_pio_read_reg(&dev_pio, RP2040_PIO_FSTAT_OFFSET);
@@ -238,12 +338,13 @@ cyw43_spi_transfer(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 
 	printf("%s 7, pc %x\n", __func__,
 	    rp2040_pio_sm_get_pc(&dev_pio, bus_data.pio_sm));
+#endif
 
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_mov(pio_pins, pio_null));
 
-	printf("%s: set enabled false\n", __func__);
-	//rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
+	//printf("%s: set enabled false\n", __func__);
+	rp2040_pio_sm_set_enabled(bus_data.pio, bus_data.pio_sm, false);
 
 	cs_enable(false);
 
@@ -285,24 +386,24 @@ read_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg)
 static uint32_t
 _cyw43_read_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint size)
 {
-	uint32_t buf32[3];
+	uint32_t buf[3];
 	uint32_t padding;
 	uint32_t result;
 	int error;
 
 	padding = (fn == BACKPLANE_FUNCTION) ? 4 : 0;
 
-	buf32[0] = make_cmd(false, true, fn, reg, size + padding);
+	buf[0] = make_cmd(false, true, fn, reg, size + padding);
 
-	error = cyw43_spi_transfer(self, (uint8_t *)&buf32[0], 4,
-	    (uint8_t *)&buf32[1], 4 + padding);
+	error = cyw43_spi_transfer(self, (uint8_t *)&buf[0], 4,
+	    (uint8_t *)&buf[1], 4 + padding);
 
-	printf("%s: error %d\n", __func__, error);
+	//printf("%s: error %d\n", __func__, error);
 
 	if (error != 0)
 		return (error);
 
-	result = buf32[padding > 0 ? 2 : 1];
+	result = buf[padding > 0 ? 2 : 1];
 
 	printf("%s: result %x\n", __func__, result);
 
@@ -346,9 +447,17 @@ _cyw43_write_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val,
 	buf[0] = make_cmd(true, true, fn, reg, size);
 	buf[1] = val;
 
-	error = cyw43_spi_transfer(self, (uint8_t *)buf, 8, NULL, 0);
+	if (fn == BACKPLANE_FUNCTION) {
+		// In case of f1 overflow
+		self->last_size = 8;
+		self->last_header[0] = buf[0];
+		self->last_header[1] = buf[1];
+		self->last_backplane_window = self->cur_backplane_window;
+	}
 
-	printf("%s: error %d\n", __func__, error);
+	error = cyw43_spi_transfer2(self, (uint8_t *)buf, 8, NULL, 0);
+
+	//printf("%s: error %d\n", __func__, error);
 
 	return (error);
 }
@@ -505,10 +614,10 @@ write_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 
 	printf("%s\n", __func__);
 
-	buf[0] = SWAP32(make_cmd(false, true, fn, reg, 4));
+	buf[0] = SWAP32(make_cmd(true, true, fn, reg, 4));
 	buf[1] = SWAP32(val);
 
-	error = cyw43_spi_transfer(self, (uint8_t *)buf, 8, NULL, 0);
+	error = cyw43_spi_transfer2(self, (uint8_t *)buf, 8, NULL, 0);
 
 	printf("%s: returned %d\n", __func__, error);
 

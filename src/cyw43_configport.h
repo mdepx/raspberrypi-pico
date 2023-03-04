@@ -185,4 +185,11 @@ cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
 #endif
 }
 
+static inline uint32_t
+make_cmd(bool write, bool inc, uint32_t fn, uint32_t addr, uint32_t sz)
+{
+
+	return write << 31 | inc << 30 | fn << 28 | (addr & 0x1ffff) << 11 | sz;
+}
+
 #endif
