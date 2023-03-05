@@ -30,23 +30,6 @@
 
 #include <cyw43_spi.h>
 
-#define	SPI_STATUS_REGISTER	((uint32_t)0x0008)
-// SPI_STATUS_REGISTER bits
-#define STATUS_DATA_NOT_AVAILABLE       ((uint32_t)0x00000001)
-#define STATUS_UNDERFLOW                ((uint32_t)0x00000002)
-#define STATUS_OVERFLOW                 ((uint32_t)0x00000004)
-#define STATUS_F2_INTR                  ((uint32_t)0x00000008)
-#define STATUS_F3_INTR                  ((uint32_t)0x00000010)
-#define STATUS_F2_RX_READY              ((uint32_t)0x00000020)
-#define STATUS_F3_RX_READY              ((uint32_t)0x00000040)
-#define STATUS_HOST_CMD_DATA_ERR        ((uint32_t)0x00000080)
-#define STATUS_F2_PKT_AVAILABLE         ((uint32_t)0x00000100)
-#define STATUS_F2_PKT_LEN_MASK          ((uint32_t)0x000FFE00)
-#define STATUS_F2_PKT_LEN_SHIFT         ((uint32_t)9)
-#define STATUS_F3_PKT_AVAILABLE         ((uint32_t)0x00100000)
-#define STATUS_F3_PKT_LEN_MASK          ((uint32_t)0xFFE00000)
-#define STATUS_F3_PKT_LEN_SHIFT         ((uint32_t)21)
-
 void
 cyw43_schedule_internal_poll_dispatch(void (*func)(void))
 {
