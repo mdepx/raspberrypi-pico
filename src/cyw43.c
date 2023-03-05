@@ -90,7 +90,6 @@ void
 cyw43_await_background_or_timeout_us(uint32_t timeout_us)
 {
 
-	printf("%s\n", __func__);
 	udelay(timeout_us);
 }
 

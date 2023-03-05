@@ -119,6 +119,15 @@ void cyw43_hal_get_mac(int idx, uint8_t buf[6]);
 void cyw43_hal_generate_laa_mac(int idx, uint8_t buf[6]);
 void cyw43_await_background_or_timeout_us(uint32_t timeout_us);
 
+#define	CYW43_CONFIGPORT_DEBUG
+#undef	CYW43_CONFIGPORT_DEBUG
+
+#ifdef	CYW43_CONFIGPORT_DEBUG
+#define	dprintf(fmt, ...)	printf(fmt, ##__VA_ARGS__)
+#else
+#define	dprintf(fmt, ...)
+#endif
+
 static inline uint32_t
 cyw43_hal_ticks_us(void)
 {
@@ -144,8 +153,6 @@ cyw43_hal_pin_read(cyw43_hal_pin_obj_t pin)
 
 	val = mdx_gpio_get(&dev_gpio, pin);
 
-	printf("%s: pin %d, val %d\n", __func__, pin, val);
-
 	return (val);
 }
 
@@ -153,7 +160,7 @@ static inline void
 cyw43_hal_pin_low(cyw43_hal_pin_obj_t pin)
 {
 
-	printf("%s: %d\n", __func__, pin);
+	dprintf("%s: %d\n", __func__, pin);
 
 	mdx_gpio_set(&dev_gpio, pin, 0);
 }
@@ -162,7 +169,7 @@ static inline void
 cyw43_hal_pin_high(cyw43_hal_pin_obj_t pin)
 {
 
-	printf("%s: %d\n", __func__, pin);
+	dprintf("%s: %d\n", __func__, pin);
 
 	mdx_gpio_set(&dev_gpio, pin, 1);
 }
@@ -172,7 +179,7 @@ cyw43_hal_pin_config(cyw43_hal_pin_obj_t pin, uint32_t mode, uint32_t pull,
     uint32_t alt __unused)
 {
 
-	printf("%s: pin %d mode %d pull %d alt %d\n", __func__,
+	dprintf("%s: pin %d mode %d pull %d alt %d\n", __func__,
 	    pin, mode, pull, alt);
 
 	if (mode == CYW43_HAL_PIN_MODE_INPUT)

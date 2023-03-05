@@ -49,12 +49,11 @@ main(void)
 
 	printf("%s: initializing cyw32\n", __func__);
 	cyw43_init(&cyw43_state);
-	printf("%s: cyw43_init returned\n", __func__);
 
 	cyw43_wifi_set_up(&cyw43_state, CYW43_ITF_STA, true,
 	    cyw43_arch_get_country_code());
 
-	printf("%s: cyw43_wifi_set_up returned\n", __func__);
+	printf("%s: wifi set up done\n", __func__);
 
 	while (1)
 		mdx_usleep(50000);
