@@ -178,22 +178,12 @@ cyw43_write_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
 		}
 	}
 
-	if (src == self->spid_buf) {
-		self->spi_header[1] = make_cmd(true, true, fn, addr, len);
-		//printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
-		res = cyw43_spi_transfer2(self, (uint8_t *)&self->spi_header[1],
-		    aligned_len + 4, NULL, 0);
-		return (res);
-	} else {
-		self->spi_header[1] = make_cmd(true, true, fn, addr, len);
+	self->spi_header[1] = make_cmd(true, true, fn, addr, len);
+	if (src != self->spid_buf)
 		memcpy(self->spid_buf, src, len);
-		//printf("%s: spid_buf[0] %x\n", __func__, self->spid_buf[0]);
-		res = cyw43_spi_transfer2(self, (uint8_t *)&self->spi_header[1],
-		    aligned_len + 4, NULL, 0);
-		return (res);
-	}
-
-	return (0);
+	res = cyw43_spi_write(self, (uint8_t *)&self->spi_header[1],
+	    aligned_len + 4);
+	return (res);
 }
 
 struct pbuf;

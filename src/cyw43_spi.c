@@ -121,15 +121,9 @@ cs_enable(int enable)
 }
 
 int
-cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
-    uint8_t *rx, size_t rx_length)
+cyw43_spi_write(cyw43_int_t *self, const uint8_t *data, size_t len)
 {
 	uint32_t reg;
-
-	//printf("%s: %d\n", __func__, tx_length);
-
-	if (rx_length)
-		panic("aaa");
 
 	cs_enable(true);
 
@@ -147,7 +141,7 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	rp2040_pio_sm_clkdiv_restart(bus_data.pio, bus_data.pio_sm);
 
 	rp2040_pio_sm_put(bus_data.pio, bus_data.pio_sm,
-	    tx_length * 8 - 1);
+	    len * 8 - 1);
 	rp2040_pio_sm_exec(bus_data.pio, bus_data.pio_sm,
 	    pio_encode_out(pio_x, 32));
 
@@ -167,13 +161,13 @@ cyw43_spi_transfer2(cyw43_int_t *self, const uint8_t *tx, size_t tx_length,
 	struct rp2040_dma_channel_config out_config;
 
 	memset(&out_config, 0, sizeof(struct rp2040_dma_channel_config));
-	out_config.src_addr = (uint32_t)tx;
+	out_config.src_addr = (uint32_t)data;
 	out_config.src_incr = true;
 	out_config.dst_addr = RP2040_PIO0_BASE +
 	    RP2040_PIO_TXF_OFFSET(bus_data.pio_sm);
 	out_config.dst_incr = false;
 	out_config.size = 2; // 32 bit
-	out_config.count = tx_length / 4;
+	out_config.count = len / 4;
 	out_config.dreq = rp2040_pio_get_dreq_offset(&dev_pio,
 	    bus_data.pio_sm, true);
 	out_config.dreq = 0 + bus_data.pio_sm; // DREQ_PIO0_TX0
@@ -466,9 +460,7 @@ _cyw43_write_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val,
 		self->last_backplane_window = self->cur_backplane_window;
 	}
 
-	error = cyw43_spi_transfer2(self, (uint8_t *)buf, 8, NULL, 0);
-
-	//printf("%s: error %d\n", __func__, error);
+	error = cyw43_spi_write(self, (uint8_t *)buf, 8);
 
 	return (error);
 }
@@ -628,9 +620,7 @@ write_reg_u32_swap(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint32_t val)
 	buf[0] = SWAP32(make_cmd(true, true, fn, reg, 4));
 	buf[1] = SWAP32(val);
 
-	error = cyw43_spi_transfer2(self, (uint8_t *)buf, 8, NULL, 0);
-
-	printf("%s: returned %d\n", __func__, error);
+	error = cyw43_spi_write(self, (uint8_t *)buf, 8);
 
 	return (error);
 }
