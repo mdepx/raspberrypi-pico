@@ -124,8 +124,6 @@ cyw43_read_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
 	uint32_t padding;
 	int ret;
 
-	//printf("%s\n", __func__);
-
 	padding = (fn == BACKPLANE_FUNCTION) ? 4 : 0;
 	aligned_len = (len + 3) & ~3;
 	self->spi_header[padding > 0 ? 0 : 1] = make_cmd(false, true, fn, addr,
@@ -160,8 +158,6 @@ cyw43_write_bytes(cyw43_int_t *self, uint32_t fn, uint32_t addr, size_t len,
 	int res;
 
 	aligned_len = (len + 3) & ~3u;
-
-	//printf("%s\n", __func__);
 
 	if (fn == WLAN_FUNCTION) {
 		f2_ready_attempts = 1000;

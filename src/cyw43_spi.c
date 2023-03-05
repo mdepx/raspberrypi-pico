@@ -312,14 +312,10 @@ _cyw43_read_reg(cyw43_int_t *self, uint32_t fn, uint32_t reg, uint size)
 	error = cyw43_spi_transfer(self, (uint8_t *)&buf[0], 4,
 	    (uint8_t *)&buf[1], 4 + padding);
 
-	//printf("%s: error %d\n", __func__, error);
-
 	if (error != 0)
 		return (error);
 
 	result = buf[padding > 0 ? 2 : 1];
-
-	//printf("%s: result %x\n", __func__, result);
 
 	return (result);
 }
@@ -396,8 +392,8 @@ cyw43_spi_init(cyw43_int_t *self)
 	int error;
 
 	error = pio_can_add_program(&dev_pio, &pio_program);
-
-	printf("%s: error %d\n", __func__, error);
+	if (!error)
+		return (-1);
 
 	bus_data.pio = &dev_pio;
 	bus_data.pio_offset = pio_add_program(&dev_pio, &pio_program);
@@ -406,8 +402,6 @@ cyw43_spi_init(cyw43_int_t *self)
 	bus_data.dma_in = 1;
 	bus_data.pio_func_sel = GPIO_FUNC_PIO0;
 
-	printf("%s: program offset %x\n", __func__, bus_data.pio_offset);
-
 	memset(&config, 0, sizeof(struct rp2040_pio_sm_config));
 
 	rp2040_pio_get_default_sm_config(&dev_pio, &config);
@@ -415,7 +409,6 @@ cyw43_spi_init(cyw43_int_t *self)
 	rp2040_sm_config_set_clkdiv_int_frac(&config, CLOCK_DIV,
 	    CLOCK_DIV_MINOR);
 
-	// //
 	rp2040_io_bank0_funcsel(&io_bank0_sc, DATA_PIN, bus_data.pio_func_sel);
 	mdx_gpio_set_function(&dev_gpio, DATA_PIN, bus_data.pio_func_sel);
 	mdx_gpio_configure(&dev_gpio, DATA_PIN,
@@ -490,8 +483,6 @@ cyw43_spi_gpio_setup(void)
 void
 cyw43_spi_reset(void)
 {
-
-	printf("%s: WL_REG_ON 0/1\n", __func__);
 
 	mdx_gpio_set(&dev_gpio, WL_REG_ON, 0);
 	udelay(20000);
